@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Play.Common;
+using Play.Inventory.Service.Clients;
 using Play.Inventory.Service.Entities;
 
 namespace Play.Inventory.Service.Controllers
@@ -11,20 +12,23 @@ namespace Play.Inventory.Service.Controllers
   {
     private readonly IRepository<InventoryItem> itemsRepository;
 
-    public ItemsController(IRepository<InventoryItem> repository)
+    private readonly CatalogClinet catalogClinet;    
+
+    public ItemsController(IRepository<InventoryItem> repository, CatalogClinet catalogClinet)
     {
       this.itemsRepository = repository;
+      this.catalogClinet = catalogClinet;
     }
 
-    [HttpGet("/allItems")]
-    public async Task<ActionResult<IEnumerable<InventoryItemDto>>> GetAllAsync()
-    {
-      var items = (await itemsRepository.GetAllAsync())
-      .Select(item => item.AsDto());
-      Console.WriteLine(items);
+    // [HttpGet("/allItems")]
+    // public async Task<ActionResult<IEnumerable<InventoryItemDto>>> GetAllAsync()
+    // {
+    //   var items = (await itemsRepository.GetAllAsync())
+    //   .Select(item => item.AsDto());
+    //   Console.WriteLine(items);
 
-      return Ok(items);
-    }
+    //   return Ok(items);
+    // }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<InventoryItemDto>>> GetAsync(Guid userId)
@@ -33,11 +37,16 @@ namespace Play.Inventory.Service.Controllers
       {
         return BadRequest();
       }
-      var items = (await itemsRepository.GetAllAsync(item => item.UserId == userId))
-      .Select(item => item.AsDto());
-      Console.WriteLine(items);
+      
+      var catalogItems = await catalogClinet.GetCatalogItemsAsync();
+      var inventoryItemEntities = await itemsRepository.GetAllAsync(item => item.UserId == userId);
+      
+      var inventoryItemsDtos = inventoryItemEntities.Select(inventoryItem => {
+        var catalogItem = catalogItems.Single(item => item.Id == inventoryItem.CatalogItemId);
+        return inventoryItem.AsDto(catalogItem.Name, catalogItem.Description);
+      });
 
-      return Ok(items);
+      return Ok(inventoryItemsDtos);
     }
 
     [HttpPost]

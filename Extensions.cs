@@ -2,8 +2,8 @@ using Play.Inventory.Service.Entities;
 
 namespace Play.Inventory.Service {
   public static class Extension {
-    public static InventoryItemDto AsDto(this InventoryItem item) {
-      return new InventoryItemDto(item.CatalogItemId, item.Quantity, item.AcquiredDate);
+    public static InventoryItemDto AsDto(this InventoryItem item, string name, string description) {
+      return new InventoryItemDto(item.CatalogItemId, name, description, item.Quantity, item.AcquiredDate);
     }
   }
 }
